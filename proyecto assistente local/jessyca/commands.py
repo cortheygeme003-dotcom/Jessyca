@@ -23,10 +23,14 @@ APP_ALIASES = {
 
 WAKE_WORDS = ("jessyca", "jessica")  # por si STT confunde
 
+# Pre-compile the regex pattern to avoid repeated compilation
+_WAKE_WORDS_PATTERN = re.compile(
+    r"\b(?:" + "|".join(re.escape(w) for w in WAKE_WORDS) + r")\b[:,]?\s*"
+)
+
 def strip_wake_word(text: str) -> str:
     t = text.lower().strip()
-    for w in WAKE_WORDS:
-        t = re.sub(rf"\b{re.escape(w)}\b[:,]?\s*", "", t).strip()
+    t = _WAKE_WORDS_PATTERN.sub("", t).strip()
     return t
 
 def has_wake_word(text: str) -> bool:

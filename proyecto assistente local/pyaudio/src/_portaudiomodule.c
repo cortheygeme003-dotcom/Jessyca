@@ -35,6 +35,7 @@
 
 #define DEFAULT_FRAMES_PER_BUFFER 1024
 /* #define VERBOSE */
+static int pa_verbosity = 0;
 
 #define min(a,b) \
    ({ __typeof__ (a) _a = (a); \
@@ -70,6 +71,10 @@
  ************************************************************/
 
 static PyMethodDef paMethods[] = {
+
+  /* verbosity */
+  {"get_verbose", pa_get_verbose, METH_VARARGS, "get verbosity"},
+  {"set_verbose", pa_set_verbose, METH_VARARGS, "set verbosity"},
 
   /* version */
   {"get_version", pa_get_version, METH_VARARGS, "get version"},
@@ -1178,6 +1183,32 @@ _create_Stream_object(void)
  * Version Info
  *************************************************************/
 
+
+/*************************************************************
+ * Verbosity
+ *************************************************************/
+
+static PyObject *
+pa_get_verbose(PyObject *self, PyObject *args)
+{
+  if (!PyArg_ParseTuple(args, ""))
+    return NULL;
+
+  return PyLong_FromLong(pa_verbosity);
+}
+
+static PyObject *
+pa_set_verbose(PyObject *self, PyObject *args)
+{
+  int verbosity;
+  if (!PyArg_ParseTuple(args, "i", &verbosity))
+    return NULL;
+
+  pa_verbosity = verbosity;
+  Py_INCREF(Py_None);
+  return Py_None;
+}
+
 static PyObject *
 pa_get_version(PyObject *self, PyObject *args)
 {
@@ -1207,11 +1238,11 @@ pa_initialize(PyObject *self, PyObject *args)
   err = Pa_Initialize();
   if (err != paNoError) {
     Pa_Terminate();
-#ifdef VERBOSE
+    if (pa_verbosity) {
     fprintf(stderr, "An error occured while using the portaudio stream\n");
     fprintf(stderr, "Error number: %d\n", err);
     fprintf(stderr, "Error message: %s\n", Pa_GetErrorText(err));
-#endif
+    }
     PyErr_SetObject(PyExc_IOError,
 		    Py_BuildValue("(s,i)",
 				  Pa_GetErrorText(err), err));
@@ -1246,11 +1277,11 @@ pa_get_host_api_count(PyObject *self, PyObject *args)
 
   if (count < 0) {
 
-#ifdef VERBOSE
+    if (pa_verbosity) {
     fprintf(stderr, "An error occured while using the portaudio stream\n");
     fprintf(stderr, "Error number: %d\n", count);
     fprintf(stderr, "Error message: %s\n", Pa_GetErrorText(count));
-#endif
+    }
 
     PyErr_SetObject(PyExc_IOError,
 		    Py_BuildValue("(s,i)",
@@ -1273,11 +1304,11 @@ pa_get_default_host_api(PyObject *self, PyObject *args)
 
   if (index < 0) {
 
-#ifdef VERBOSE
+    if (pa_verbosity) {
     fprintf(stderr, "An error occured while using the portaudio stream\n");
     fprintf(stderr, "Error number: %d\n", index);
     fprintf(stderr, "Error message: %s\n", Pa_GetErrorText(index));
-#endif
+    }
 
     PyErr_SetObject(PyExc_IOError,
 		    Py_BuildValue("(s,i)",
@@ -1301,11 +1332,11 @@ pa_host_api_type_id_to_host_api_index(PyObject *self, PyObject *args)
 
   if (index < 0) {
 
-#ifdef VERBOSE
+    if (pa_verbosity) {
     fprintf(stderr, "An error occured while using the portaudio stream\n");
     fprintf(stderr, "Error number: %d\n", index);
     fprintf(stderr, "Error message: %s\n", Pa_GetErrorText(index));
-#endif
+    }
 
     PyErr_SetObject(PyExc_IOError,
 		    Py_BuildValue("(s,i)",
@@ -1330,11 +1361,11 @@ pa_host_api_device_index_to_device_index(PyObject *self, PyObject *args)
   devIndex = Pa_HostApiDeviceIndexToDeviceIndex(apiIndex, hostApiDeviceindex);
   if (devIndex < 0) {
 
-#ifdef VERBOSE
+    if (pa_verbosity) {
     fprintf(stderr, "An error occured while using the portaudio stream\n");
     fprintf(stderr, "Error number: %d\n", devIndex);
     fprintf(stderr, "Error message: %s\n", Pa_GetErrorText(devIndex));
-#endif
+    }
 
     PyErr_SetObject(PyExc_IOError,
 		    Py_BuildValue("(s,i)",
@@ -1386,11 +1417,11 @@ pa_get_device_count(PyObject *self, PyObject *args)
   count = Pa_GetDeviceCount();
   if (count < 0) {
 
-#ifdef VERBOSE
+    if (pa_verbosity) {
     fprintf(stderr, "An error occured while using the portaudio stream\n");
     fprintf(stderr, "Error number: %d\n", count);
     fprintf(stderr, "Error message: %s\n", Pa_GetErrorText(count));
-#endif
+    }
 
     PyErr_SetObject(PyExc_IOError,
 		    Py_BuildValue("(s,i)",
@@ -1415,11 +1446,11 @@ pa_get_default_input_device(PyObject *self, PyObject *args)
     return NULL;
   } else if (index < 0) {
 
-#ifdef VERBOSE
+    if (pa_verbosity) {
     fprintf(stderr, "An error occured while using the portaudio stream\n");
     fprintf(stderr, "Error number: %d\n", index);
     fprintf(stderr, "Error message: %s\n", Pa_GetErrorText(index));
-#endif
+    }
 
     PyErr_SetObject(PyExc_IOError,
 		    Py_BuildValue("(s,i)",
@@ -1444,11 +1475,11 @@ pa_get_default_output_device(PyObject *self, PyObject *args)
     return NULL;
   } else if (index < 0) {
 
-#ifdef VERBOSE
+    if (pa_verbosity) {
     fprintf(stderr, "An error occured while using the portaudio stream\n");
     fprintf(stderr, "Error number: %d\n", index);
     fprintf(stderr, "Error message: %s\n", Pa_GetErrorText(index));
-#endif
+    }
 
     PyErr_SetObject(PyExc_IOError,
 		    Py_BuildValue("(s,i)",
@@ -1498,7 +1529,7 @@ _stream_callback_cfunction(const void *input,
   int return_val = paAbort;
   PyGILState_STATE _state = PyGILState_Ensure();
 
-#ifdef VERBOSE
+    if (pa_verbosity) {
   if (statusFlags != 0) {
     printf("Status flag set: ");
     if (statusFlags & paInputUnderflow) {
@@ -1517,7 +1548,7 @@ _stream_callback_cfunction(const void *input,
       printf("priming output!\n");
     }
   }
-#endif
+    }
 
   PyAudioCallbackContext *context = (PyAudioCallbackContext *)userData;
   PyObject *py_callback = context->callback;
@@ -1551,19 +1582,19 @@ _stream_callback_cfunction(const void *input,
                                            NULL);
 
   if (py_result == NULL) {
-#ifdef VERBOSE
+    if (pa_verbosity) {
     fprintf(stderr, "An error occured while using the portaudio stream\n");
     fprintf(stderr, "Error message: Could not call callback function\n");
-#endif
+    }
     PyObject *err = PyErr_Occurred();
 
     if (err) {
         PyThreadState_SetAsyncExc(main_thread_id, err);
 
         // Print out a stack trace to help debugging.
-        // TODO: make VERBOSE a runtime flag so users can control
-        // the amount of logging.
-        PyErr_Print();
+        if (pa_verbosity) {
+            PyErr_Print();
+        }
     }
 
     goto end;
@@ -1575,10 +1606,10 @@ _stream_callback_cfunction(const void *input,
                         &pData,
                         &output_len,
                         &return_val)) {
-#ifdef VERBOSE
+    if (pa_verbosity) {
     fprintf(stderr, "An error occured while using the portaudio stream\n");
     fprintf(stderr, "Error message: Could not parse callback return value\n");
-#endif
+    }
 
     PyObject *err = PyErr_Occurred();
 
@@ -1586,9 +1617,9 @@ _stream_callback_cfunction(const void *input,
         PyThreadState_SetAsyncExc(main_thread_id, err);
 
         // Print out a stack trace to help debugging.
-        // TODO: make VERBOSE a runtime flag so users can control
-        // the amount of logging.
-        PyErr_Print();
+        if (pa_verbosity) {
+            PyErr_Print();
+        }
     }
 
     Py_XDECREF(py_result);
@@ -1728,9 +1759,9 @@ pa_open(PyObject *self, PyObject *args, PyObject *kwargs)
   if ((input_device_index_arg == NULL) ||
       (input_device_index_arg == Py_None)) {
 
-#ifdef VERBOSE
+    if (pa_verbosity) {
     printf("Using default input device\n");
-#endif
+    }
 
     input_device_index = -1;
 
@@ -1748,17 +1779,17 @@ pa_open(PyObject *self, PyObject *args, PyObject *kwargs)
     input_device_index = (int) PyLong_AsLong(input_device_index_long);
     Py_DECREF(input_device_index_long);
 
-#ifdef VERBOSE
+    if (pa_verbosity) {
     printf("Using input device index number: %d\n", input_device_index);
-#endif
+    }
   }
 
   if ((output_device_index_arg == NULL) ||
       (output_device_index_arg == Py_None)) {
 
-#ifdef VERBOSE
+    if (pa_verbosity) {
     printf("Using default output device\n");
-#endif
+    }
 
     output_device_index = -1;
 
@@ -1775,9 +1806,9 @@ pa_open(PyObject *self, PyObject *args, PyObject *kwargs)
     output_device_index = (int) PyLong_AsLong(output_device_index_long);
     Py_DECREF(output_device_index_long);
 
-#ifdef VERBOSE
+    if (pa_verbosity) {
     printf("Using output device index number: %d\n", output_device_index);
-#endif
+    }
   }
 
   /* sanity checks */
@@ -1894,11 +1925,11 @@ pa_open(PyObject *self, PyObject *args, PyObject *kwargs)
 
   if (err != paNoError) {
 
-#ifdef VERBOSE
+    if (pa_verbosity) {
     fprintf(stderr, "An error occured while using the portaudio stream\n");
     fprintf(stderr, "Error number: %d\n", err);
     fprintf(stderr, "Error message: %s\n", Pa_GetErrorText(err));
-#endif
+    }
 
     PyErr_SetObject(PyExc_IOError,
 		    Py_BuildValue("(s,i)",
@@ -2069,11 +2100,11 @@ pa_start_stream(PyObject *self, PyObject *args)
        (err != paStreamIsNotStopped)) {
     _cleanup_Stream_object(streamObject);
 
-#ifdef VERBOSE
+    if (pa_verbosity) {
     fprintf(stderr, "An error occured while using the portaudio stream\n");
     fprintf(stderr, "Error number: %d\n", err);
     fprintf(stderr, "Error message: %s\n", Pa_GetErrorText(err));
-#endif
+    }
 
     PyErr_SetObject(PyExc_IOError,
 		    Py_BuildValue("(s,i)",
@@ -2114,11 +2145,11 @@ pa_stop_stream(PyObject *self, PyObject *args)
   if ((err != paNoError) && (err != paStreamIsStopped)) {
     _cleanup_Stream_object(streamObject);
 
-#ifdef VERBOSE
+    if (pa_verbosity) {
     fprintf(stderr, "An error occured while using the portaudio stream\n");
     fprintf(stderr, "Error number: %d\n", err);
     fprintf(stderr, "Error message: %s\n", Pa_GetErrorText(err));
-#endif
+    }
 
     PyErr_SetObject(PyExc_IOError,
 		    Py_BuildValue("(s,i)",
@@ -2158,11 +2189,11 @@ pa_abort_stream(PyObject *self, PyObject *args)
   if ((err != paNoError) && (err != paStreamIsStopped)) {
     _cleanup_Stream_object(streamObject);
 
-#ifdef VERBOSE
+    if (pa_verbosity) {
     fprintf(stderr, "An error occured while using the portaudio stream\n");
     fprintf(stderr, "Error number: %d\n", err);
     fprintf(stderr, "Error message: %s\n", Pa_GetErrorText(err));
-#endif
+    }
 
     PyErr_SetObject(PyExc_IOError,
 		    Py_BuildValue("(s,i)",
@@ -2201,11 +2232,11 @@ pa_is_stream_stopped(PyObject *self, PyObject *args)
   if ((err = Pa_IsStreamStopped(stream)) < 0) {
     _cleanup_Stream_object(streamObject);
 
-#ifdef VERBOSE
+    if (pa_verbosity) {
     fprintf(stderr, "An error occured while using the portaudio stream\n");
     fprintf(stderr, "Error number: %d\n", err);
     fprintf(stderr, "Error message: %s\n", Pa_GetErrorText(err));
-#endif
+    }
 
     PyErr_SetObject(PyExc_IOError,
 		    Py_BuildValue("(s,i)",
@@ -2247,11 +2278,11 @@ pa_is_stream_active(PyObject *self, PyObject *args)
   if ((err = Pa_IsStreamActive(stream)) < 0) {
     _cleanup_Stream_object(streamObject);
 
-#ifdef VERBOSE
+    if (pa_verbosity) {
     fprintf(stderr, "An error occured while using the portaudio stream\n");
     fprintf(stderr, "Error number: %d\n", err);
     fprintf(stderr, "Error message: %s\n", Pa_GetErrorText(err));
-#endif
+    }
 
     PyErr_SetObject(PyExc_IOError,
 		    Py_BuildValue("(s,i)",
@@ -2393,11 +2424,11 @@ pa_write_stream(PyObject *self, PyObject *args)
   /* cleanup */
   _cleanup_Stream_object(streamObject);
 
-#ifdef VERBOSE
+    if (pa_verbosity) {
   fprintf(stderr, "An error occured while using the portaudio stream\n");
   fprintf(stderr, "Error number: %d\n", err);
   fprintf(stderr, "Error message: %s\n", Pa_GetErrorText(err));
-#endif
+    }
 
   PyErr_SetObject(PyExc_IOError,
 		  Py_BuildValue("(s,i)",
@@ -2449,9 +2480,9 @@ pa_read_stream(PyObject *self, PyObject *args)
   num_bytes = (total_frames) * (inputParameters->channelCount) *
     (Pa_GetSampleSize(inputParameters->sampleFormat));
 
-#ifdef VERBOSE
+    if (pa_verbosity) {
   fprintf(stderr, "Allocating %d bytes\n", num_bytes);
-#endif
+    }
 
   rv = PyBytes_FromStringAndSize(NULL, num_bytes);
   sampleBlock = (short *) PyBytes_AsString(rv);
@@ -2476,15 +2507,15 @@ pa_read_stream(PyObject *self, PyObject *args)
       if (should_warn)
          fprintf(stderr, "WARN: Received paInputOverflowed\n");
 
-#ifdef VERBOSE
+    if (pa_verbosity) {
       fprintf(stderr, "Input Overflow.\n");
-#endif
+    }
 
     } else if (err & paOutputUnderflowed) {
 
-#ifdef VERBOSE
+    if (pa_verbosity) {
       fprintf(stderr, "Output Underflow.\n");
-#endif
+    }
 
     } else {
       /* clean up */

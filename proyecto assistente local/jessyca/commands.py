@@ -23,10 +23,18 @@ APP_ALIASES = {
 
 WAKE_WORDS = ("jessyca", "jessica")  # por si STT confunde
 
+# Pre-compiled regular expressions
+_RE_EXIT = re.compile(r"\b(salir|terminar|apagar|cierra jessyca|adios)\b")
+_RE_OPEN = re.compile(r"\b(abr(e|ir)|abre)\b\s+(.*)$")
+_RE_PATH = re.compile(r"([a-zA-Z]:\\|^\\\\|^/)")
+_RE_URL_EXPLICIT = re.compile(r"\b(abr(e|ir)|abre)\b\s+(https?://\S+)")
+_RE_WAKE_WORDS = [re.compile(rf"\b{re.escape(w)}\b[:,]?\s*") for w in WAKE_WORDS]
+
+
 def strip_wake_word(text: str) -> str:
     t = text.lower().strip()
-    for w in WAKE_WORDS:
-        t = re.sub(rf"\b{re.escape(w)}\b[:,]?\s*", "", t).strip()
+    for r in _RE_WAKE_WORDS:
+        t = r.sub("", t).strip()
     return t
 
 def has_wake_word(text: str) -> bool:
@@ -46,23 +54,23 @@ def parse_command(text: str) -> Tuple[str, Optional[str]]:
     t = strip_wake_word(text)
 
     # salir
-    if re.search(r"\b(salir|terminar|apagar|cierra jessyca|adios)\b", t):
+    if _RE_EXIT.search(t):
         return ("exit", None)
 
     # abre "algo"
-    m = re.search(r"\b(abr(e|ir)|abre)\b\s+(.*)$", t)
+    m = _RE_OPEN.search(t)
     if m:
         target = m.group(3).strip().strip('"')
         # si parece url
         if "." in target and " " not in target and not target.endswith((".exe", ".lnk")):
             return ("open_url", target)
         # si parece ruta (tiene :\ o empieza con \ o /)
-        if re.search(r"([a-zA-Z]:\\|^\\\\|^/)", target):
+        if _RE_PATH.search(target):
             return ("open_path", target)
         return ("open_app", target)
 
     # abrir url explícita
-    m = re.search(r"\b(abr(e|ir)|abre)\b\s+(https?://\S+)", t)
+    m = _RE_URL_EXPLICIT.search(t)
     if m:
         return ("open_url", m.group(3))
 

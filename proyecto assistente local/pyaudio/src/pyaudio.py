@@ -238,6 +238,22 @@ def get_format_from_width(width, unsigned=True):
         raise ValueError("Invalid width: %d" % width)
 
 
+def get_verbose():
+    """
+    Returns the current state of the verbose logging flag.
+    :rtype: bool
+    """
+    return pa.get_verbose()
+
+
+def set_verbose(verbose):
+    """
+    Sets the verbose logging flag.
+    :param verbose: Boolean or integer (0 or 1).
+    """
+    pa.set_verbose(verbose)
+
+
 ############################################################
 # Versioning
 ############################################################

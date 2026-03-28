@@ -2,6 +2,9 @@
 import json
 from typing import Optional
 
+# Cache for Vosk models
+_VOSK_MODELS = {}
+
 def listen_google(lang: str = "es-ES", timeout: int = 5, phrase_time_limit: int = 6) -> Optional[str]:
     import speech_recognition as sr
     r = sr.Recognizer()
@@ -23,15 +26,20 @@ def listen_vosk(model_path: str, timeout: int = 6) -> Optional[str]:
     import speech_recognition as sr
     from vosk import Model, KaldiRecognizer
 
+    # Ensure model is loaded (cached)
+    if model_path not in _VOSK_MODELS:
+        _VOSK_MODELS[model_path] = Model(model_path)
+
+    model = _VOSK_MODELS[model_path]
+
     r = sr.Recognizer()
     with sr.Microphone() as source:
         r.adjust_for_ambient_noise(source, duration=0.6)
         try:
             audio = r.listen(source, timeout=timeout, phrase_time_limit=timeout)
             data = audio.get_raw_data(convert_rate=16000, convert_width=2)
-            
-            # Cargar modelo y reconocer
-            model = Model(model_path)
+
+            # Reconocer usando el modelo cacheado
             rec = KaldiRecognizer(model, 16000)
             rec.AcceptWaveform(data)
             result = json.loads(rec.Result())

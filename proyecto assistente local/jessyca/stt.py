@@ -1,15 +1,16 @@
 # stt.py
 import json
 from typing import Optional
+import speech_recognition as sr
+
+_recognizer = sr.Recognizer()
 
 def listen_google(lang: str = "es-ES", timeout: int = 5, phrase_time_limit: int = 6) -> Optional[str]:
-    import speech_recognition as sr
-    r = sr.Recognizer()
     with sr.Microphone() as source:
-        r.adjust_for_ambient_noise(source, duration=0.6)
+        _recognizer.adjust_for_ambient_noise(source, duration=0.6)
         try:
-            audio = r.listen(source, timeout=timeout, phrase_time_limit=phrase_time_limit)
-            return r.recognize_google(audio, language=lang)
+            audio = _recognizer.listen(source, timeout=timeout, phrase_time_limit=phrase_time_limit)
+            return _recognizer.recognize_google(audio, language=lang)
         except sr.WaitTimeoutError:
             # Es normal que esto ocurra si no se habla, no es un error fatal.
             return None
@@ -20,16 +21,14 @@ def listen_vosk(model_path: str, timeout: int = 6) -> Optional[str]:
     """
     Offline. Requiere modelo Vosk descargado.
     """
-    import speech_recognition as sr
     from vosk import Model, KaldiRecognizer
 
-    r = sr.Recognizer()
     with sr.Microphone() as source:
-        r.adjust_for_ambient_noise(source, duration=0.6)
+        _recognizer.adjust_for_ambient_noise(source, duration=0.6)
         try:
-            audio = r.listen(source, timeout=timeout, phrase_time_limit=timeout)
+            audio = _recognizer.listen(source, timeout=timeout, phrase_time_limit=timeout)
             data = audio.get_raw_data(convert_rate=16000, convert_width=2)
-            
+
             # Cargar modelo y reconocer
             model = Model(model_path)
             rec = KaldiRecognizer(model, 16000)

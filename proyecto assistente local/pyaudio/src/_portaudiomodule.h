@@ -29,6 +29,14 @@
 #ifndef __PAMODULE_H__
 #define __PAMODULE_H__
 
+
+/* verbosity */
+static PyObject *
+pa_get_verbose(PyObject *self, PyObject *args);
+
+static PyObject *
+pa_set_verbose(PyObject *self, PyObject *args);
+
 /* version */
 static PyObject *
 pa_get_version(PyObject *self, PyObject *args);
